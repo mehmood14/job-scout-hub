@@ -1,0 +1,14 @@
+{
+  "name": "job-scout-hub",
+  "private": true,
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "dev:mcp": "pnpm --filter mcp dev",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

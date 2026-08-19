@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "job-scout": {
+      "type": "stdio",
+      "command": "pnpm",
+      "args": [
+        "--filter",
+        "mcp",
+        "start"
+      ]
+    }
+  }
+}

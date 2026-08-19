@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Application {
+  id                 String   @id @default(uuid())
+  company            String
+  role               String
+  status             String
+  source             String?
+  salaryExpectation  String?
+  appliedDate        DateTime?
+  recruiterContacted Boolean  @default(false)
+  recruiterName      String?
+  followUpDate       DateTime?
+  excitement         String?
+  excitedAbout       Boolean  @default(false)
+  workStyle          String?
+  whyCompany         String?
+  cultureNotes       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([company, role])
+}
