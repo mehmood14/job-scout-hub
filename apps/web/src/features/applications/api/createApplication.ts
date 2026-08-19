@@ -1,19 +1,25 @@
 import { API_URL } from "../../../config";
 
-type CreateApplicationInput = {
+export type CreateApplicationInput = {
   company: string;
   role: string;
   status: string;
+  salaryExpectation?: string | null;
 };
 
-export async function createApplication(input: CreateApplicationInput) {
-  const response = await fetch(`${API_URL}/applications`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+export async function createApplication(
+  input: CreateApplicationInput,
+) {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/applications`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
     },
-    body: JSON.stringify(input),
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to create application");
@@ -21,7 +27,6 @@ export async function createApplication(input: CreateApplicationInput) {
 
   return response.json();
 }
-
 
 export async function createApplicationsBulk(
   applications: CreateApplicationInput[],
