@@ -1,3 +1,5 @@
+import { API_URL } from "../../../config";
+
 export type UpdateApplicationInput = {
   id: string;
   company?: string;
@@ -12,7 +14,7 @@ export async function updateApplication({
   ...data
 }: UpdateApplicationInput) {
   const response = await fetch(
-    `http://localhost:3001/applications/${id}`,
+    `${API_URL}/applications/${id}`,
     {
       method: "PATCH",
       headers: {

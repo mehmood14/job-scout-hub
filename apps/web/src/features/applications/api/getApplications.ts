@@ -1,3 +1,5 @@
+import { API_URL } from "../../../config";
+
 export type Application = {
   id: string;
   company: string;
@@ -19,7 +21,7 @@ export type Application = {
 };
 
 export async function getApplications(): Promise<Application[]> {
-  const response = await fetch("http://localhost:3001/applications");
+  const response = await fetch(`${API_URL}/applications`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch applications");

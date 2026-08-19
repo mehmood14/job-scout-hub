@@ -1,3 +1,5 @@
+import { API_URL } from "../../../config";
+
 type CreateApplicationInput = {
   company: string;
   role: string;
@@ -5,7 +7,7 @@ type CreateApplicationInput = {
 };
 
 export async function createApplication(input: CreateApplicationInput) {
-  const response = await fetch("http://localhost:3001/applications", {
+  const response = await fetch(`${API_URL}/applications`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -25,7 +27,7 @@ export async function createApplicationsBulk(
   applications: CreateApplicationInput[],
 ) {
   const response = await fetch(
-    "http://localhost:3001/applications/bulk",
+    `${API_URL}/applications/bulk`,
     {
       method: "POST",
       headers: {

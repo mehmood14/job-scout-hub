@@ -1,6 +1,8 @@
+import { API_URL } from "../../../config";
+
 export async function deleteApplication(id: string): Promise<void> {
   const response = await fetch(
-    `http://localhost:3001/applications/${id}`,
+    `${API_URL}/applications/${id}`,
     {
       method: "DELETE",
     },
