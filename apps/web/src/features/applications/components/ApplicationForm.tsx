@@ -21,10 +21,10 @@ export function ApplicationForm() {
 
   const [jsonInput, setJsonInput] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isBulkImporting, setIsBulkImporting] = useState(false);
 
   const mutation = useMutation({
     mutationFn: createApplication,
-
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["applications"],
@@ -37,10 +37,10 @@ export function ApplicationForm() {
 
     mutation.mutate(
       {
-        company,
-        role,
+        company: company.trim(),
+        role: role.trim(),
         status,
-        salaryExpectation: salaryExpectation || null,
+        salaryExpectation: salaryExpectation.trim() || null,
       },
       {
         onSuccess: () => {
@@ -58,7 +58,6 @@ export function ApplicationForm() {
 
     try {
       const parsed: unknown = JSON.parse(jsonInput);
-
       const applications = Array.isArray(parsed) ? parsed : [parsed];
 
       if (applications.length === 0) {
@@ -81,14 +80,14 @@ export function ApplicationForm() {
           return;
         }
 
-        const company = application.company;
-        const role = application.role;
+        const companyValue = application.company;
+        const roleValue = application.role;
 
         if (
-          typeof company !== "string" ||
-          typeof role !== "string" ||
-          !company.trim() ||
-          !role.trim()
+          typeof companyValue !== "string" ||
+          typeof roleValue !== "string" ||
+          !companyValue.trim() ||
+          !roleValue.trim()
         ) {
           setJsonError(
             "Company and role must be non-empty strings.",
@@ -97,8 +96,8 @@ export function ApplicationForm() {
         }
 
         validApplications.push({
-          company,
-          role,
+          company: companyValue.trim(),
+          role: roleValue.trim(),
           status:
             "status" in application &&
             typeof application.status === "string"
@@ -112,15 +111,9 @@ export function ApplicationForm() {
         });
       }
 
-await createApplicationsBulk(validApplications);
+      setIsBulkImporting(true);
 
-setJsonInput("");
-
-await queryClient.invalidateQueries({
-
-  queryKey: ["applications"],
-
-});
+      await createApplicationsBulk(validApplications);
 
       setJsonInput("");
 
@@ -129,104 +122,144 @@ await queryClient.invalidateQueries({
       });
     } catch {
       setJsonError("Invalid JSON. Check the format and try again.");
+    } finally {
+      setIsBulkImporting(false);
     }
   }
 
   return (
-    <section>
-      <div>
-        <button
-          type="button"
-          onClick={() => setMode("manual")}
-          disabled={mode === "manual"}
-        >
-          Manual
-        </button>
+    <section className="application-form-card">
+      <div className="application-form-header">
+        <div>
+          <h2>New application</h2>
+          <p>Add an application manually or import several at once.</p>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setMode("json")}
-          disabled={mode === "json"}
-        >
-          Add via JSON
-        </button>
+        <div className="application-form-tabs">
+          <button
+            type="button"
+            className={mode === "manual" ? "active" : ""}
+            onClick={() => setMode("manual")}
+          >
+            Manual
+          </button>
+
+          <button
+            type="button"
+            className={mode === "json" ? "active" : ""}
+            onClick={() => setMode("json")}
+          >
+            Add via JSON
+          </button>
+        </div>
       </div>
 
       {mode === "manual" && (
-        <form onSubmit={handleManualSubmit}>
-          <input
-            value={company}
-            onChange={(event) => setCompany(event.target.value)}
-            placeholder="Company"
-            required
-          />
+        <form
+          className="application-form-grid"
+          onSubmit={handleManualSubmit}
+        >
+          <label>
+            Company
+            <input
+              value={company}
+              onChange={(event) => setCompany(event.target.value)}
+              placeholder="Nordnet"
+              required
+            />
+          </label>
 
-          <input
-            value={role}
-            onChange={(event) => setRole(event.target.value)}
-            placeholder="Role"
-            required
-          />
+          <label>
+            Role
+            <input
+              value={role}
+              onChange={(event) => setRole(event.target.value)}
+              placeholder="Software Engineer"
+              required
+            />
+          </label>
 
-          <select
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option value="Applied">Applied</option>
-            <option value="Recruiter Contacted">
-              Recruiter Contacted
-            </option>
-            <option value="Interview">Interview</option>
-            <option value="Technical Interview">
-              Technical Interview
-            </option>
-            <option value="Offer">Offer</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+          <label>
+            Status
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              <option value="Applied">Applied</option>
+              <option value="Recruiter Contacted">
+                Recruiter Contacted
+              </option>
+              <option value="Interview">Interview</option>
+              <option value="Technical Interview">
+                Technical Interview
+              </option>
+              <option value="Offer">Offer</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </label>
 
-          <input
-            value={salaryExpectation}
-            onChange={(event) =>
-              setSalaryExpectation(event.target.value)
-            }
-            placeholder="Salary expectation"
-          />
+          <label>
+            Salary expectation
+            <input
+              value={salaryExpectation}
+              onChange={(event) =>
+                setSalaryExpectation(event.target.value)
+              }
+              placeholder="65 000 SEK/mo"
+            />
+          </label>
 
-          <button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending
-              ? "Adding..."
-              : "Add application"}
-          </button>
+          <div className="application-form-actions">
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending
+                ? "Adding..."
+                : "Add application"}
+            </button>
+          </div>
         </form>
       )}
 
       {mode === "json" && (
-        <div>
-          <textarea
-            rows={12}
-            value={jsonInput}
-            onChange={(event) => {
-              setJsonInput(event.target.value);
-              setJsonError(null);
-            }}
-            placeholder={`[
+        <div className="application-json-form">
+          <label>
+            Application JSON
+            <textarea
+              rows={12}
+              value={jsonInput}
+              onChange={(event) => {
+                setJsonInput(event.target.value);
+                setJsonError(null);
+              }}
+              placeholder={`[
   {
     "company": "Google",
     "role": "Frontend Engineer",
     "status": "Applied"
   }
 ]`}
-          />
+            />
+          </label>
 
-          {jsonError && <p>{jsonError}</p>}
+          {jsonError && (
+            <p className="form-error">{jsonError}</p>
+          )}
 
-          <button
-            type="button"
-            onClick={handleJsonSubmit}
-            disabled={!jsonInput.trim() || mutation.isPending}
-          >
-            Import applications
-          </button>
+          <div className="application-form-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={handleJsonSubmit}
+              disabled={!jsonInput.trim() || isBulkImporting}
+            >
+              {isBulkImporting
+                ? "Importing..."
+                : "Import applications"}
+            </button>
+          </div>
         </div>
       )}
     </section>

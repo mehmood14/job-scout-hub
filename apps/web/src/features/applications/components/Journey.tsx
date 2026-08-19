@@ -16,21 +16,24 @@ export function Journey() {
   });
 
   return (
-    <section>
+    <section className="journey">
       <h2>The journey so far</h2>
 
-      <div>
+      <div className="journey-steps">
         {statuses.map((status, index) => {
           const count = applications.filter(
             (application) => application.status === status,
           ).length;
 
           return (
-            <span key={status}>
-              <strong>{count}</strong> {status}
+            <div key={status} className="journey-step">
+              <strong>{count}</strong>
+              <span>{status}</span>
 
-              {index < statuses.length - 1 && " → "}
-            </span>
+              {index < statuses.length - 1 && (
+                <span className="journey-arrow">→</span>
+              )}
+            </div>
           );
         })}
       </div>
