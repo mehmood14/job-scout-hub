@@ -2,6 +2,9 @@
 
 A personal job-search workspace for tracking applications, interview progress, salary expectations, and the overall journey from application to offer.
 
+<img width="1086" height="817" alt="Screenshot 2026-08-19 at 6 34 13 AM" src="https://github.com/user-attachments/assets/a2ac22a8-3893-4993-b765-e6f10d1e40da" />
+
+
 Built as a TypeScript monorepo with a React frontend, Express API, PostgreSQL, Prisma, and an MCP service.
 
 ## Features
