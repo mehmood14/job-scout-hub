@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { APPLICATION_STATUSES } from "@job-scout/shared";
 
 import { useAuth } from "../../auth/AuthContext";
+import { useModalDialog } from "../../../components/useModalDialog";
 import type { Application } from "../api/getApplications";
 import { deleteApplication } from "../api/deleteApplication";
 import { updateApplication } from "../api/updateApplication";
@@ -16,6 +17,7 @@ export function ApplicationModal({ application, onClose }: ApplicationModalProps
   const { accessMode } = useAuth();
   const queryClient = useQueryClient();
   const closeButton = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLElement>(null);
   const [company, setCompany] = useState(application.company);
   const [role, setRole] = useState(application.role);
   const [status, setStatus] = useState(application.status);
@@ -39,18 +41,7 @@ export function ApplicationModal({ application, onClose }: ApplicationModalProps
     },
   });
 
-  useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeButton.current?.focus();
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [onClose]);
+  useModalDialog({ dialogRef: dialog, initialFocusRef: closeButton, onClose });
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -70,7 +61,7 @@ export function ApplicationModal({ application, onClose }: ApplicationModalProps
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <section className="application-modal" role="dialog" aria-modal="true" aria-labelledby="application-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+      <section ref={dialog} className="application-modal" role="dialog" aria-modal="true" aria-labelledby="application-modal-title" onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <div>
             <p className="modal-eyebrow">{isViewer ? "Sample application" : "Application details"}</p>

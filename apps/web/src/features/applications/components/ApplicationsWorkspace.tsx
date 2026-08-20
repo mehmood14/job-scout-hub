@@ -21,8 +21,8 @@ export function ApplicationsWorkspace() {
         </select>
         <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)} aria-label="Sort applications">
           <option value="default">Default order</option>
-          <option value="status-asc">Status A → Z</option>
-          <option value="status-desc">Status Z → A</option>
+          <option value="status-asc">Status: stages → rejected → applied</option>
+          <option value="status-desc">Status: applied → rejected → stages</option>
           <option value="company-asc">Company A → Z</option>
           <option value="company-desc">Company Z → A</option>
         </select>

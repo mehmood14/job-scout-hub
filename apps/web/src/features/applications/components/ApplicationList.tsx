@@ -6,6 +6,7 @@ import { AuthenticationError, getApplications, type Application } from "../api/g
 import { ApplicationModal } from "./ApplicationModal";
 import { ApplicationTimelineModal } from "./ApplicationTimelineModal";
 import { useAuth } from "../../auth/AuthContext";
+import { compareRecruitmentStatus } from "./applicationStatus";
 
 export type SortOption = "default" | "status-asc" | "status-desc" | "company-asc" | "company-desc";
 
@@ -44,8 +45,8 @@ export function ApplicationList({ filters }: ApplicationListProps) {
       const matchesSearch = !search || application.company.toLowerCase().includes(search) || application.role.toLowerCase().includes(search);
       return matchesSearch && (filters.status === "All" || application.status === filters.status);
     });
-    if (filters.sortBy === "status-asc") return result.toSorted((first, second) => first.status.localeCompare(second.status));
-    if (filters.sortBy === "status-desc") return result.toSorted((first, second) => second.status.localeCompare(first.status));
+    if (filters.sortBy === "status-asc") return result.toSorted((first, second) => compareRecruitmentStatus(first.status, second.status) || first.company.localeCompare(second.company));
+    if (filters.sortBy === "status-desc") return result.toSorted((first, second) => compareRecruitmentStatus(second.status, first.status) || first.company.localeCompare(second.company));
     if (filters.sortBy === "company-asc") return result.toSorted((first, second) => first.company.localeCompare(second.company));
     if (filters.sortBy === "company-desc") return result.toSorted((first, second) => second.company.localeCompare(first.company));
     return result;

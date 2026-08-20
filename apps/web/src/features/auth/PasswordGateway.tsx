@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { track } from "@vercel/analytics";
 
 type PasswordGatewayProps = {
   onLogin: (password: string) => Promise<void>;
@@ -9,10 +10,12 @@ export function PasswordGateway({ onLogin, onExploreDemo }: PasswordGatewayProps
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPreparingDemo, setIsPreparingDemo] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setIsPreparingDemo(false);
     setIsSubmitting(true);
 
     try {
@@ -26,13 +29,16 @@ export function PasswordGateway({ onLogin, onExploreDemo }: PasswordGatewayProps
 
   async function handleDemo(): Promise<void> {
     setError(null);
+    setIsPreparingDemo(true);
     setIsSubmitting(true);
 
     try {
       await onExploreDemo();
+      track("demo_started", { accessMode: "viewer" });
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Unable to start demo mode.");
     } finally {
+      setIsPreparingDemo(false);
       setIsSubmitting(false);
     }
   }
@@ -100,10 +106,17 @@ export function PasswordGateway({ onLogin, onExploreDemo }: PasswordGatewayProps
             <p>Browse realistic sample data, timelines, themes, and filters.</p>
           </div>
           <button className="secondary-button" type="button" onClick={handleDemo} disabled={isSubmitting}>
-            Explore demo <span aria-hidden="true">→</span>
+            {isPreparingDemo ? "Preparing demo…" : <>Explore demo <span aria-hidden="true">→</span></>}
           </button>
         </div>
+        {isPreparingDemo && (
+          <p className="gateway-demo-loading" role="status">
+            <span className="gateway-demo-spinner" aria-hidden="true" />
+            Setting up the sample applications and timelines for your first visit. This usually takes a few seconds.
+          </p>
+        )}
         <p className="gateway-note"><span aria-hidden="true">●</span> Demo mode is read-only. Private applications stay private.</p>
+        <a className="gateway-case-study-link" href="/case-study">Curious how it was built? Read the case study <span aria-hidden="true">→</span></a>
       </section>
     </main>
   );

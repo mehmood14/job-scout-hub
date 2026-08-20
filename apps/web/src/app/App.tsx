@@ -17,10 +17,18 @@ function App() {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     void getSession().then(setSession).catch(() => setSession(null));
   }, []);
+
+  useEffect(() => {
+    if (!successMessage) return undefined;
+
+    const timeout = window.setTimeout(() => setSuccessMessage(null), 5_000);
+    return () => window.clearTimeout(timeout);
+  }, [successMessage]);
 
   async function establishSession(action: () => Promise<Session>): Promise<void> {
     const nextSession = await action();
@@ -35,7 +43,35 @@ function App() {
     setSession(null);
   }
 
-  if (session === undefined) return <main className="gateway-page"><p className="loading-state">Opening Job Scout Hub...</p></main>;
+  function handleApplicationCreated(message: string): void {
+    setSuccessMessage(message);
+  }
+
+  if (session === undefined) {
+    return (
+      <main className="gateway-page gateway-page-loading">
+        <ThemeToggle variant="gateway" />
+        <div className="loading-float loading-float-one" aria-hidden="true">
+          <span>✨</span>
+          <small>Almost there</small>
+        </div>
+        <div className="loading-float loading-float-two" aria-hidden="true">
+          <span>☕</span>
+          <small>Fresh ideas brewing</small>
+        </div>
+        <div className="loading-float loading-float-three" aria-hidden="true">
+          <span>🙌</span>
+          <small>Good things loading</small>
+        </div>
+        <section className="loading-state" role="status" aria-live="polite" aria-label="Preparing Job Scout Hub">
+          <span className="loading-state-mark" aria-hidden="true">JS</span>
+          <span className="loading-state-spinner" aria-hidden="true" />
+          <h1>Waking up the demo crew…</h1>
+          <p>While they grab coffee, pick a theme from the Appearance panel.</p>
+        </section>
+      </main>
+    );
+  }
 
   if (!session) {
     return (
@@ -67,9 +103,9 @@ function App() {
             <span className="hero-eyebrow">JOB SEARCH · STOCKHOLM</span>
             <h1>Finding the right next chapter.</h1>
             <p>Looking for good people, meaningful work, and a place where I can learn, contribute, and have a few laughs while building great things.</p>
+            <a className="hero-inline-case-study" href="/case-study">How I built Job Scout Hub <span aria-hidden="true">→</span></a>
           </div>
           <div className="hero-actions">
-            {!isViewer && <button type="button" className="new-application-button" onClick={() => setIsFormOpen((current) => !current)}>{isFormOpen ? "Close" : "New application"}</button>}
             <div className="hero-account-actions">
               <div className="hero-profile">
                 <div className="hero-portrait-card">
@@ -86,15 +122,23 @@ function App() {
               </div>
               <div className="hero-account-footer">
                 {isViewer && <span className="demo-indicator">Viewing sample data</span>}
+                {!isViewer && <button type="button" className="new-application-button" onClick={() => setIsFormOpen(true)}>Add application</button>}
                 <button type="button" className="logout-button" onClick={() => void handleLogout()}>Log out</button>
               </div>
             </div>
           </div>
         </header>
         <ProjectStory />
-        {isFormOpen && !isViewer && <ApplicationForm />}
+        {isFormOpen && !isViewer && <ApplicationForm onClose={() => setIsFormOpen(false)} onSuccess={handleApplicationCreated} />}
         <Journey />
         <ApplicationsWorkspace />
+        {successMessage && (
+          <div className="success-toast" role="status" aria-live="polite">
+            <span aria-hidden="true">✓</span>
+            <p>{successMessage}</p>
+            <button type="button" onClick={() => setSuccessMessage(null)} aria-label="Dismiss success message">×</button>
+          </div>
+        )}
       </main>
     </AuthContext>
   );
