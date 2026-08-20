@@ -4,6 +4,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { Analytics } from "@vercel/analytics/react";
 
 import App from "../src/app/App.tsx";
 
@@ -13,6 +14,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <Analytics />
     </QueryClientProvider>
   </StrictMode>,
 );
