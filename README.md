@@ -2,6 +2,8 @@
 
 A personal job-search workspace for tracking applications, interview progress, salary expectations, and the overall journey from application to offer.
 
+**Live website:** [job-scout-hub-web.vercel.app](https://job-scout-hub-web.vercel.app/)
+
 <img width="1086" height="817" alt="Screenshot 2026-08-19 at 6 34 13 AM" src="https://github.com/user-attachments/assets/a2ac22a8-3893-4993-b765-e6f10d1e40da" />
 
 
