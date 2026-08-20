@@ -5,6 +5,7 @@ export async function deleteApplication(id: string): Promise<void> {
     `${API_URL}/applications/${id}`,
     {
       method: "DELETE",
+      credentials: "include",
     },
   );
 

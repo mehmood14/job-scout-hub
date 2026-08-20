@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { APPLICATION_STATUSES, type ApplicationStatus } from "@job-scout/shared";
 
 import {
   createApplication,
@@ -16,8 +17,11 @@ export function ApplicationForm() {
 
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
-  const [status, setStatus] = useState("Applied");
+  const [status, setStatus] = useState<ApplicationStatus>("Applied");
+  const [appliedDate, setAppliedDate] = useState(todayDate());
+  const [recruiterName, setRecruiterName] = useState("");
   const [salaryExpectation, setSalaryExpectation] = useState("");
+  const [description, setDescription] = useState("");
 
   const [jsonInput, setJsonInput] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
@@ -40,14 +44,20 @@ export function ApplicationForm() {
         company: company.trim(),
         role: role.trim(),
         status,
+        appliedDate,
+        recruiterName: recruiterName.trim() || null,
         salaryExpectation: salaryExpectation.trim() || null,
+        description: description.trim() || null,
       },
       {
         onSuccess: () => {
           setCompany("");
           setRole("");
           setStatus("Applied");
+          setAppliedDate(todayDate());
+          setRecruiterName("");
           setSalaryExpectation("");
+          setDescription("");
         },
       },
     );
@@ -95,18 +105,32 @@ export function ApplicationForm() {
           return;
         }
 
+        const record = application as Record<string, unknown>;
+        const statusValue = record.status;
+
+        if (statusValue !== undefined && (!isApplicationStatus(statusValue))) {
+          setJsonError("Each status must be a supported application status.");
+          return;
+        }
+
         validApplications.push({
           company: companyValue.trim(),
           role: roleValue.trim(),
-          status:
-            "status" in application &&
-            typeof application.status === "string"
-              ? application.status
-              : "Applied",
+          status: statusValue ?? "Applied",
+          ...(typeof record.appliedDate === "string"
+            ? { appliedDate: record.appliedDate }
+            : {}),
+          recruiterName:
+            typeof record.recruiterName === "string"
+              ? record.recruiterName
+              : null,
           salaryExpectation:
-            "salaryExpectation" in application &&
-            typeof application.salaryExpectation === "string"
-              ? application.salaryExpectation
+            typeof record.salaryExpectation === "string"
+              ? record.salaryExpectation
+              : null,
+          description:
+            typeof record.description === "string"
+              ? record.description
               : null,
         });
       }
@@ -183,19 +207,31 @@ export function ApplicationForm() {
             Status
             <select
               value={status}
-              onChange={(event) => setStatus(event.target.value)}
+              onChange={(event) => setStatus(event.target.value as ApplicationStatus)}
             >
-              <option value="Applied">Applied</option>
-              <option value="Recruiter Contacted">
-                Recruiter Contacted
-              </option>
-              <option value="Interview">Interview</option>
-              <option value="Technical Interview">
-                Technical Interview
-              </option>
-              <option value="Offer">Offer</option>
-              <option value="Rejected">Rejected</option>
+              {APPLICATION_STATUSES.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
+          </label>
+
+          <label>
+            Applied date
+            <input
+              type="date"
+              value={appliedDate}
+              onChange={(event) => setAppliedDate(event.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Recruiter name
+            <input
+              value={recruiterName}
+              onChange={(event) => setRecruiterName(event.target.value)}
+              placeholder="Alex Andersson"
+            />
           </label>
 
           <label>
@@ -206,6 +242,16 @@ export function ApplicationForm() {
                 setSalaryExpectation(event.target.value)
               }
               placeholder="65 000 SEK/mo"
+            />
+          </label>
+
+          <label className="application-form-description">
+            Description and job details
+            <textarea
+              rows={4}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Posting URL, recruiter details, interview notes..."
             />
           </label>
 
@@ -238,7 +284,9 @@ export function ApplicationForm() {
   {
     "company": "Google",
     "role": "Frontend Engineer",
-    "status": "Applied"
+    "status": "Applied",
+    "appliedDate": "2026-08-20",
+    "recruiterName": "Alex Andersson"
   }
 ]`}
             />
@@ -264,4 +312,12 @@ export function ApplicationForm() {
       )}
     </section>
   );
+}
+
+function isApplicationStatus(value: unknown): value is ApplicationStatus {
+  return typeof value === "string" && APPLICATION_STATUSES.includes(value as ApplicationStatus);
+}
+
+function todayDate(): string {
+  return new Date().toISOString().slice(0, 10);
 }

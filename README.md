@@ -171,7 +171,13 @@ For the API, configure the PostgreSQL connection:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+OWNER_PASSWORD="choose-a-long-unique-password"
+CLIENT_ORIGIN="http://localhost:5173"
 ```
+
+`OWNER_PASSWORD` unlocks the private owner workspace. Sessions use an HttpOnly
+cookie, expire after 168 hours by default, and use secure cookies in production.
+Visitors can use **Explore demo** to access isolated, read-only sample data.
 
 For the web application, configure the deployed/local API URL if your frontend uses an environment variable for it:
 
@@ -186,19 +192,19 @@ VITE_API_URL="http://localhost:3001"
 Generate the Prisma client:
 
 ```bash
-pnpm --filter api prisma generate
+pnpm --filter api exec prisma generate
 ```
 
 Apply database migrations:
 
 ```bash
-pnpm --filter api prisma migrate deploy
+pnpm --filter api exec prisma migrate deploy
 ```
 
 For local development, when creating a new migration:
 
 ```bash
-pnpm --filter api prisma migrate dev
+pnpm --filter api exec prisma migrate dev
 ```
 
 ---

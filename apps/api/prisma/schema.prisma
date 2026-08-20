@@ -23,8 +23,34 @@ model Application {
   workStyle          String?
   whyCompany         String?
   cultureNotes       String?
+  description        String?
+  accessMode         String   @default("owner")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  timelineEvents     ApplicationTimelineEvent[]
+  timelineOrder      Json?
+  timelineSkippedStatuses Json?
 
-  @@unique([company, role])
+  @@unique([company, role, accessMode])
+  @@index([accessMode])
+}
+
+model ApplicationTimelineEvent {
+  id            String      @id @default(uuid())
+  applicationId String
+  status        String
+  occurredAt    DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, occurredAt])
+}
+
+model Session {
+  id         String   @id
+  accessMode String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([expiresAt])
 }

@@ -1,285 +1,189 @@
-import { useMemo, useState } from "react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { ApplicationStatus } from "@job-scout/shared";
 
-import {
-  getApplications,
-  type Application,
-} from "../api/getApplications";
-import { deleteApplication } from "../api/deleteApplication";
-import { updateApplication } from "../api/updateApplication";
+import { AuthenticationError, getApplications, type Application } from "../api/getApplications";
+import { ApplicationModal } from "./ApplicationModal";
+import { ApplicationTimelineModal } from "./ApplicationTimelineModal";
+import { useAuth } from "../../auth/AuthContext";
+
+export type SortOption = "default" | "status-asc" | "status-desc" | "company-asc" | "company-desc";
 
 type ApplicationListProps = {
   filters: {
     search: string;
-    status: string;
-    sortBy: string;
+    status: "All" | ApplicationStatus;
+    sortBy: SortOption;
   };
 };
 
-export function ApplicationList({ filters }: ApplicationListProps) {
-  const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState<string | null>(null);
+const pageSizes = [10, 20, 30, 50, 100] as const;
+type PageSize = (typeof pageSizes)[number];
 
-  const {
-    data: applications = [],
-    isPending,
-    isError,
-  } = useQuery({
-    queryKey: ["applications"],
-    queryFn: getApplications,
-  });
+function statusClassName(status: ApplicationStatus): string {
+  return `status-badge status-${status.toLowerCase().replaceAll(" ", "-").replaceAll("/", "-")}`;
+}
+
+export function ApplicationList({ filters }: ApplicationListProps) {
+  const { logout } = useAuth();
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [timelineApplication, setTimelineApplication] = useState<Application | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(10);
+  const { data: applications = [], isPending, isError, error } = useQuery({ queryKey: ["applications"], queryFn: getApplications });
+
+  useEffect(() => {
+    if (isError && error instanceof AuthenticationError) {
+      void logout();
+    }
+  }, [error, isError, logout]);
 
   const filteredApplications = useMemo(() => {
     const search = filters.search.trim().toLowerCase();
-
     const result = applications.filter((application) => {
-      const matchesSearch =
-        !search ||
-        application.company.toLowerCase().includes(search) ||
-        application.role.toLowerCase().includes(search);
-
-      const matchesStatus =
-        filters.status === "All" ||
-        application.status === filters.status;
-
-      return matchesSearch && matchesStatus;
+      const matchesSearch = !search || application.company.toLowerCase().includes(search) || application.role.toLowerCase().includes(search);
+      return matchesSearch && (filters.status === "All" || application.status === filters.status);
     });
-
-    if (filters.sortBy === "status") {
-      const statusOrder: Record<string, number> = {
-        Offer: 0,
-        "Technical Interview": 1,
-        Interview: 2,
-        "Recruiter Contacted": 3,
-        Applied: 4,
-        Rejected: 5,
-      };
-
-      return result.toSorted(
-        (a, b) =>
-          (statusOrder[a.status] ?? 99) -
-          (statusOrder[b.status] ?? 99),
-      );
-    }
-
+    if (filters.sortBy === "status-asc") return result.toSorted((first, second) => first.status.localeCompare(second.status));
+    if (filters.sortBy === "status-desc") return result.toSorted((first, second) => second.status.localeCompare(first.status));
+    if (filters.sortBy === "company-asc") return result.toSorted((first, second) => first.company.localeCompare(second.company));
+    if (filters.sortBy === "company-desc") return result.toSorted((first, second) => second.company.localeCompare(first.company));
     return result;
   }, [applications, filters]);
 
-  const updateMutation = useMutation({
-    mutationFn: updateApplication,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["applications"],
-      });
-    },
-  });
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedApplications = filteredApplications.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteApplication,
-
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({
-        queryKey: ["applications"],
-      });
-
-      const previousApplications =
-        queryClient.getQueryData<Application[]>(["applications"]);
-
-      queryClient.setQueryData<Application[]>(
-        ["applications"],
-        (current = []) =>
-          current.filter((application) => application.id !== id),
-      );
-
-      return { previousApplications };
-    },
-
-    onError: (_error, _id, context) => {
-      queryClient.setQueryData(
-        ["applications"],
-        context?.previousApplications,
-      );
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["applications"],
-      });
-    },
-  });
-
-  if (isPending) {
-    return <p className="loading-state">Loading applications...</p>;
-  }
-
-  if (isError) {
-    return (
-      <p className="error-state">
-        Could not load applications.
-      </p>
-    );
-  }
+  if (isPending) return <p className="loading-state">Loading applications...</p>;
+  if (isError) return <p className="error-state">Could not load applications. Your session may have expired.</p>;
 
   return (
     <>
-      <p className="application-count">
-        {filteredApplications.length === applications.length
-          ? `${applications.length} applications`
-          : `${filteredApplications.length} of ${applications.length} applications`}
-      </p>
-
-      <div className="application-table-wrapper">
-        <table className="application-table">
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Salary expectation</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredApplications.map((application) => {
-              const isEditing = editingId === application.id;
-
-              return (
-                <tr key={application.id}>
+      <section className="application-table-panel" aria-label="Applications shortlist">
+        <div className="application-table-panel-header">
+          <div>
+            <span>Your shortlist</span>
+            <strong>Applications in focus</strong>
+          </div>
+          <p className="application-count">{filteredApplications.length === applications.length ? `${applications.length} applications` : `${filteredApplications.length} of ${applications.length} applications`}</p>
+        </div>
+        <div className="application-table-wrapper">
+          <table className="application-table">
+            <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Applied</th><th>Salary expectation</th><th><span className="visually-hidden">Actions</span></th></tr></thead>
+            <tbody>
+              {pagedApplications.map((application) => (
+                <tr key={application.id} className="application-row">
                   <td className="application-company">
-                    {isEditing ? (
-                      <input
-                        defaultValue={application.company}
-                        onBlur={(event) =>
-                          updateMutation.mutate({
-                            id: application.id,
-                            company: event.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      application.company
-                    )}
+                    <span className="company-cell"><span className="company-monogram" aria-hidden="true">{application.company.charAt(0).toUpperCase()}</span><span>{application.company}</span></span>
                   </td>
-
-                  <td className="application-role">
-                    {isEditing ? (
-                      <input
-                        defaultValue={application.role}
-                        onBlur={(event) =>
-                          updateMutation.mutate({
-                            id: application.id,
-                            role: event.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      application.role
-                    )}
-                  </td>
-
+                  <td className="application-role"><span>{application.role}</span>{application.recruiterName && <small>{application.recruiterName}</small>}</td>
                   <td>
-                    {isEditing ? (
-                      <select
-                        value={application.status}
-                        onChange={(event) =>
-                          updateMutation.mutate({
-                            id: application.id,
-                            status: event.target.value,
-                          })
-                        }
-                      >
-                        <option value="Applied">Applied</option>
-                        <option value="Recruiter Contacted">
-                          Recruiter Contacted
-                        </option>
-                        <option value="Interview">Interview</option>
-                        <option value="Technical Interview">
-                          Technical Interview
-                        </option>
-                        <option value="Offer">Offer</option>
-                        <option value="Rejected">Rejected</option>
-                      </select>
-                    ) : (
-                      <span
-                        className={`status-badge status-${application.status
-                          .toLowerCase()
-                          .replaceAll(" ", "-")}`}
-                      >
-                        {application.status}
+                    <div className="table-status">
+                      <span className={statusClassName(application.status)}>{application.status}</span>
+                      <span className={`table-status-state is-${timelineState(application.currentStatusOccurredAt).toLowerCase()}`}>
+                        {timelineStateLabel(timelineState(application.currentStatusOccurredAt))}
                       </span>
-                    )}
-                  </td>
-
-                  <td>
-                    {isEditing ? (
-                      <input
-                        defaultValue={
-                          application.salaryExpectation ?? ""
-                        }
-                        placeholder="65 000 SEK/mo"
-                        onBlur={(event) =>
-                          updateMutation.mutate({
-                            id: application.id,
-                            salaryExpectation:
-                              event.target.value || null,
-                          })
-                        }
-                      />
-                    ) : (
-                      application.salaryExpectation ?? "—"
-                    )}
-                  </td>
-
-                  <td>
-                    <div className="application-actions">
-                      {isEditing ? (
-                        <button
-                          type="button"
-                          onClick={() => setEditingId(null)}
-                        >
-                          Done
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditingId(application.id)
-                          }
-                        >
-                          Edit
-                        </button>
+                      {isUpcoming(application.currentStatusOccurredAt) && (
+                        <time className="table-status-time" dateTime={application.currentStatusOccurredAt ?? undefined}>
+                          {formatStatusDateTime(application.currentStatusOccurredAt)}
+                        </time>
                       )}
-
+                    </div>
+                  </td>
+                  <td className="application-applied-date">{formatAppliedDate(application.appliedDate)}</td>
+                  <td className="application-salary">{application.salaryExpectation ?? "—"}</td>
+                  <td className="timeline-action-cell">
+                    <div className="application-row-actions">
                       <button
+                        className="edit-application-button"
                         type="button"
-                        className="delete-button"
-                        onClick={() =>
-                          deleteMutation.mutate(application.id)
-                        }
+                        aria-label={`Edit application for ${application.company}`}
+                        title="Edit application"
+                        onClick={() => setSelectedApplication(application)}
                       >
-                        Delete
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.7 4.3 19.7 10.3M4 20l4.4-1 10.3-10.3a2.1 2.1 0 0 0-3-3L5.4 16 4 20Z" /></svg>
+                      </button>
+                      <button
+                        className="timeline-button"
+                        type="button"
+                        aria-label={`View application timeline for ${application.company}`}
+                        title="View application timeline"
+                        onClick={() => setTimelineApplication(application)}
+                      >
+                        <span aria-hidden="true">◷</span>
                       </button>
                     </div>
                   </td>
                 </tr>
-              );
-            })}
+              ))}
+              {filteredApplications.length === 0 && <tr><td colSpan={6} className="empty-state">No applications found.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <nav className="pagination" aria-label="Applications pagination">
+        <label className="page-size-control">
+          Show
+          <select
+            value={pageSize}
+            onChange={(event) => {
+              const nextPageSize = Number(event.target.value);
 
-            {filteredApplications.length === 0 && (
-              <tr>
-                <td colSpan={5} className="empty-state">
-                  No applications found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              if (isPageSize(nextPageSize)) {
+                setPageSize(nextPageSize);
+                setPage(1);
+              }
+            }}
+          >
+            {pageSizes.map((size) => <option key={size} value={size}>{size}</option>)}
+          </select>
+          entries
+        </label>
+        {totalPages > 1 && <div className="page-navigation"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={currentPage === 1}>Previous</button><span>Page {currentPage} of {totalPages}</span><button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={currentPage === totalPages}>Next</button></div>}
+      </nav>
+      {selectedApplication && <ApplicationModal application={selectedApplication} onClose={() => setSelectedApplication(null)} />}
+      {timelineApplication && <ApplicationTimelineModal application={timelineApplication} onClose={() => setTimelineApplication(null)} />}
     </>
   );
+}
+
+function isPageSize(value: number): value is PageSize {
+  return pageSizes.includes(value as PageSize);
+}
+
+function formatAppliedDate(value: string | null): string {
+  if (!value) return "—";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function timelineState(value: string | null): "Finished" | "Upcoming" {
+  return value && new Date(value).getTime() <= Date.now()
+    ? "Finished"
+    : "Upcoming";
+}
+
+function isUpcoming(value: string | null): value is string {
+  return value !== null && new Date(value).getTime() > Date.now();
+}
+
+function timelineStateLabel(state: "Finished" | "Upcoming"): string {
+  return state === "Finished" ? "Finished — waiting for response" : state;
+}
+
+function formatStatusDateTime(value: string | null): string {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
 }
