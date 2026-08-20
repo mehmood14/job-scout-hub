@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "pnpm --filter @job-scout/shared build && tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit"
   },
