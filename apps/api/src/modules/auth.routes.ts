@@ -18,20 +18,24 @@ function sessionIdFrom(request: Request): string | undefined {
 }
 
 function setSessionCookie(response: Response, sessionId: string): void {
+  const isProduction = process.env.NODE_ENV === "production";
+
   response.cookie(sessionCookieName, sessionId, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: sessionMaxAgeMs,
     path: "/",
   });
 }
 
 function clearSessionCookie(response: Response): void {
+  const isProduction = process.env.NODE_ENV === "production";
+
   response.clearCookie(sessionCookieName, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
   });
 }
