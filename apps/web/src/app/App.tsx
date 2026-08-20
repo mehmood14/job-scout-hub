@@ -17,10 +17,18 @@ function App() {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     void getSession().then(setSession).catch(() => setSession(null));
   }, []);
+
+  useEffect(() => {
+    if (!successMessage) return undefined;
+
+    const timeout = window.setTimeout(() => setSuccessMessage(null), 5_000);
+    return () => window.clearTimeout(timeout);
+  }, [successMessage]);
 
   async function establishSession(action: () => Promise<Session>): Promise<void> {
     const nextSession = await action();
@@ -33,6 +41,10 @@ function App() {
     setIsFormOpen(false);
     queryClient.removeQueries({ queryKey: ["applications"] });
     setSession(null);
+  }
+
+  function handleApplicationCreated(message: string): void {
+    setSuccessMessage(message);
   }
 
   if (session === undefined) {
@@ -91,6 +103,7 @@ function App() {
             <span className="hero-eyebrow">JOB SEARCH · STOCKHOLM</span>
             <h1>Finding the right next chapter.</h1>
             <p>Looking for good people, meaningful work, and a place where I can learn, contribute, and have a few laughs while building great things.</p>
+            <a className="hero-inline-case-study" href="/case-study">How I built Job Scout Hub <span aria-hidden="true">→</span></a>
           </div>
           <div className="hero-actions">
             <div className="hero-account-actions">
@@ -109,16 +122,23 @@ function App() {
               </div>
               <div className="hero-account-footer">
                 {isViewer && <span className="demo-indicator">Viewing sample data</span>}
-                {!isViewer && <button type="button" className="new-application-button" onClick={() => setIsFormOpen((current) => !current)}>{isFormOpen ? "Close" : "New application"}</button>}
+                {!isViewer && <button type="button" className="new-application-button" onClick={() => setIsFormOpen(true)}>Add application</button>}
                 <button type="button" className="logout-button" onClick={() => void handleLogout()}>Log out</button>
               </div>
             </div>
           </div>
         </header>
         <ProjectStory />
-        {isFormOpen && !isViewer && <ApplicationForm />}
+        {isFormOpen && !isViewer && <ApplicationForm onClose={() => setIsFormOpen(false)} onSuccess={handleApplicationCreated} />}
         <Journey />
         <ApplicationsWorkspace />
+        {successMessage && (
+          <div className="success-toast" role="status" aria-live="polite">
+            <span aria-hidden="true">✓</span>
+            <p>{successMessage}</p>
+            <button type="button" onClick={() => setSuccessMessage(null)} aria-label="Dismiss success message">×</button>
+          </div>
+        )}
       </main>
     </AuthContext>
   );

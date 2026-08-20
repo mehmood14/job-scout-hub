@@ -545,6 +545,92 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
+.gateway-case-study-link {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.gateway-case-study-link:hover {
+  color: var(--color-primary);
+}
+
+.gateway-case-study-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.hero-inline-case-study {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.hero-inline-case-study:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.error-boundary-page { min-height: 100dvh; }
+
+.error-boundary-card {
+  display: grid;
+  justify-items: center;
+  max-width: 420px;
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.error-boundary-card h1 { margin: 14px 0 0; font-size: 28px; letter-spacing: -0.03em; }
+.error-boundary-card p:not(.modal-eyebrow) { margin: 12px 0 22px; color: var(--color-text-secondary); line-height: 1.55; }
+
+.success-toast {
+  position: fixed;
+  z-index: 20;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+}
+
+.success-toast > span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.success-toast p { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.35; }
+.success-toast button { width: 28px; height: 28px; margin-left: 2px; border: 0; border-radius: 7px; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 20px; cursor: pointer; }
+.success-toast button:hover { background: var(--color-surface-soft); color: var(--color-text); }
+
 .logout-button:hover,
 .secondary-button:hover {
   border-color: var(--color-primary);

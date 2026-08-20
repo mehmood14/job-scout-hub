@@ -6,6 +6,7 @@ import { AuthenticationError, getApplications, type Application } from "../api/g
 import { ApplicationModal } from "./ApplicationModal";
 import { ApplicationTimelineModal } from "./ApplicationTimelineModal";
 import { useAuth } from "../../auth/AuthContext";
+import { compareRecruitmentStatus } from "./applicationStatus";
 
 export type SortOption = "default" | "status-asc" | "status-desc" | "company-asc" | "company-desc";
 
@@ -22,16 +23,6 @@ type PageSize = (typeof pageSizes)[number];
 
 function statusClassName(status: ApplicationStatus): string {
   return `status-badge status-${status.toLowerCase().replaceAll(" ", "-").replaceAll("/", "-")}`;
-}
-
-function compareRecruitmentStatus(first: ApplicationStatus, second: ApplicationStatus): number {
-  const priority = (status: ApplicationStatus): number => {
-    if (status === "Applied") return 2;
-    if (status === "Rejected") return 1;
-    return 0;
-  };
-
-  return priority(first) - priority(second) || first.localeCompare(second);
 }
 
 export function ApplicationList({ filters }: ApplicationListProps) {

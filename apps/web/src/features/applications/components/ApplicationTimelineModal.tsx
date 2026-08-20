@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { APPLICATION_STATUSES, type ApplicationStatus } from "@job-scout/shared";
 
 import { useAuth } from "../../auth/AuthContext";
+import { useModalDialog } from "../../../components/useModalDialog";
 import type { Application } from "../api/getApplications";
 import {
   getApplicationTimeline,
@@ -12,6 +13,7 @@ import { updateApplicationTimelineOrder } from "../api/updateApplicationTimeline
 import { upsertApplicationTimelineEvent } from "../api/upsertApplicationTimelineEvent";
 import { updateApplication } from "../api/updateApplication";
 import { updateApplicationTimelineSkippedStatuses } from "../api/updateApplicationTimelineSkippedStatuses";
+import { timelineEventForStatus, timelineStepState } from "./timelineUtils";
 
 type ApplicationTimelineModalProps = {
   application: Application;
@@ -27,6 +29,7 @@ export function ApplicationTimelineModal({
   const { accessMode } = useAuth();
   const queryClient = useQueryClient();
   const closeButton = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLElement>(null);
   const [statusOrder, setStatusOrder] = useState<ApplicationStatus[]>([...APPLICATION_STATUSES]);
   const [draggedStatus, setDraggedStatus] = useState<ApplicationStatus | null>(null);
   const [editingStatus, setEditingStatus] = useState<ApplicationStatus | null>(null);
@@ -90,6 +93,8 @@ export function ApplicationTimelineModal({
 
   useEffect(() => {
     if (data && isStatusOrder(data.statusOrder)) {
+      // This query response is the persisted source of truth for the editable timeline.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatusOrder(data.statusOrder);
     }
     if (data && isSkippedStatuses(data.skippedStatuses)) {
@@ -98,25 +103,12 @@ export function ApplicationTimelineModal({
   }, [data]);
 
   useEffect(() => {
+    // Reset optimistic state when a different application is opened.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentStatus(application.status);
   }, [application.status]);
 
-  useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
-    closeButton.current?.focus();
-
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") onClose();
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [onClose]);
+  useModalDialog({ dialogRef: dialog, initialFocusRef: closeButton, onClose });
 
   function saveStatusOrder(nextOrder: ApplicationStatus[]): void {
     setStatusOrder(nextOrder);
@@ -190,6 +182,7 @@ export function ApplicationTimelineModal({
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <section
+        ref={dialog}
         className="timeline-modal"
         role="dialog"
         aria-modal="true"
@@ -336,32 +329,6 @@ function isSkippedStatuses(value: unknown): value is ApplicationStatus[] {
     && new Set(value).size === value.length;
 }
 
-function timelineEventForStatus(
-  events: ApplicationTimelineEvent[],
-  status: ApplicationStatus,
-  appliedDate: string | null,
-): ApplicationTimelineEvent | undefined {
-  if (status === "Applied" && appliedDate) {
-    const existingEvent = latestEventForStatus(events, status);
-
-    return existingEvent
-      ? { ...existingEvent, occurredAt: appliedDate }
-      : {
-        id: "applied-date",
-        applicationId: "",
-        status: "Applied",
-        occurredAt: appliedDate,
-        createdAt: appliedDate,
-      };
-  }
-
-  return latestEventForStatus(events, status);
-}
-
-function latestEventForStatus(events: ApplicationTimelineEvent[], status: ApplicationStatus): ApplicationTimelineEvent | undefined {
-  return events.findLast((event) => event.status === status);
-}
-
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
@@ -370,13 +337,6 @@ function formatTime(value: string): string {
   return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 }
 
-function timelineStepState(
-  event: ApplicationTimelineEvent | undefined,
-): "Finished" | "Upcoming" {
-  return event && new Date(event.occurredAt).getTime() <= Date.now()
-    ? "Finished"
-    : "Upcoming";
-}
 
 function timelineStepStateLabel(state: "Finished" | "Upcoming"): string {
   return state === "Finished" ? "Finished — waiting for response" : state;

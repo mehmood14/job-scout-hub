@@ -1,174 +1,96 @@
 # Job Scout Hub
 
-A personal job-search workspace for tracking applications, interview progress, salary expectations, and the overall journey from application to offer.
+> A full-stack, privacy-conscious job-search workspace built around one question: **where do I actually want to go next?**
 
-**Live website:** [job-scout-hub-web.vercel.app](https://job-scout-hub-web.vercel.app/)
+[Explore the live demo](https://job-scout-hub-web.vercel.app/) · [Read the case study](https://job-scout-hub-web.vercel.app/case-study) · [Connect on LinkedIn](https://www.linkedin.com/in/mehmood-ul-haq/)
 
-<img width="1261" height="870" alt="Screenshot 2026-08-20 at 9 20 22 AM" src="https://github.com/user-attachments/assets/f777fef6-b06e-49ba-9a31-d4fd9bce8bb9" />
+<img width="1261" height="870" alt="Job Scout Hub application dashboard" src="https://github.com/user-attachments/assets/f777fef6-b06e-49ba-9a31-d4fd9bce8bb9" />
 
-Built as a TypeScript monorepo with a React frontend, Express API, PostgreSQL, Prisma, and an MCP service.
+## Why I built it
 
-## Features
+I was already employed and selectively exploring companies that genuinely interested me. When recruiter conversations, follow-ups, salary expectations, and browser tabs started piling up, I needed a calmer way to reason about the search.
 
-### Application tracking
+Job Scout Hub is not designed to maximise application volume. It keeps the company, people, role, compensation, and recruitment journey in context—so the search stays intentional.
 
-- Add applications manually
-- Import multiple applications using JSON
-- Edit existing applications
-- Delete applications
-- Track salary expectations
-- Track application status:
-  - Applied
-  - Recruiter Contacted
-  - Interview
-  - Technical Interview
-  - Offer
-  - Rejected
+## What it demonstrates
 
-### Search and filtering
+- A polished React experience with responsive layouts, keyboard-accessible dialogs, loading/error states, and five theme personalities.
+- A flexible recruitment timeline: timestamp each stage, mark the current step, distinguish upcoming and completed work, reorder each company’s process, and skip/restore stages.
+- A secure separation between a private owner workspace and a realistic, read-only portfolio demo.
+- Type-safe full-stack development with shared status types, Zod request validation, Prisma/PostgreSQL persistence, and TanStack Query server state.
+- Production deployment across Vercel (web), Render (API), and Neon (PostgreSQL), with privacy-friendly Vercel Analytics.
 
-Applications can be:
-
-- Searched by company or role
-- Filtered by status
-- Sorted by application status
-
-### Pagination
-
-Applications are displayed with client-side pagination.
-
-- 10 applications per page
-- Previous / Next navigation
-- Pagination automatically adapts to search and filters
-
-### Journey overview
-
-The dashboard provides a quick overview of the current job-search funnel:
+## Architecture
 
 ```text
-Applied → Recruiter Contacted → Interview → Technical Interview → Offer
+React + TypeScript + Vite
+        │
+TanStack Query API clients
+        │
+Express + Zod validation ─── session / access-mode checks
+        │
+Prisma ORM
+        │
+PostgreSQL (Neon)
+
+Shared package: application statuses and domain types
+Deployment: Vercel (web) · Render (API) · Neon (database)
 ```
 
-Counts are calculated directly from application data.
-
-### Themes
-
-The interface includes three selectable themes:
-
-- 🌊 Ocean
-- 🔥 Ember
-- 🌲 Forest
-
-The selected theme is stored locally and restored when the application is reopened.
-
-### Responsive UI
-
-The interface is designed to work across desktop, tablet, and mobile layouts.
-
----
-
-## Tech Stack
-
-### Frontend
-
-- React
-- TypeScript
-- Vite
-- TanStack Query
-- CSS
-
-### Backend
-
-- Node.js
-- Express
-- TypeScript
-- Zod
-
-### Database
-
-- PostgreSQL
-- Prisma ORM
-
-### Tooling
-
-- pnpm workspaces
-- TypeScript
-- tsx
-
----
-
-## Project Structure
+The repository is a pnpm monorepo:
 
 ```text
-job-scout-hub/
-├── apps/
-│   ├── api/
-│   │   ├── prisma/
-│   │   └── src/
-│   │
-│   ├── web/
-│   │   └── src/
-│   │       ├── components/
-│   │       └── features/
-│   │           └── applications/
-│   │
-│   └── mcp/
-│
-├── packages/
-│   └── shared/
-│
-├── package.json
-├── pnpm-workspace.yaml
-└── README.md
+apps/
+  web/       React, Vite, TanStack Query
+  api/       Express, Zod, Prisma
+  mcp/       Model Context Protocol service
+packages/
+  shared/    Shared domain types and application statuses
 ```
 
----
+## Demo mode and privacy
 
-## Requirements
+Visitors can choose **Explore demo** without a password. The API seeds realistic sample applications and timelines in a dedicated `viewer` access mode. That mode is read-only, and private owner applications are never returned to it.
 
-Before running the project locally, install:
+The public [case study](https://job-scout-hub-web.vercel.app/case-study) is also no-auth and makes no application-data requests.
+
+## Engineering choices
+
+| Concern | Approach |
+| --- | --- |
+| Server state | TanStack Query with targeted invalidation after application and timeline mutations |
+| Input validation | Zod schemas at API boundaries |
+| Access control | HttpOnly session cookie and server-side `owner` / `viewer` checks |
+| Accessibility | Semantic tables, labelled icon buttons, focus-trapped modals, Escape-to-close, and visible focus styles |
+| Reliability | Error boundary, purpose-built loading/empty/error states, and CI quality checks |
+| Analytics | Anonymous Vercel page-view analytics plus a non-identifying demo-entry event |
+
+## Visual highlights
+
+The live demo is the best place to see the current visual system:
+
+- **Dashboard:** application table with search, filters, custom status order, pagination, and recruiter context.
+- **Timeline:** company-specific recruitment stages with current/final outcome treatment and date-time editing.
+- **Themes:** Light, Dark, Black, Ocean, and Ember all use the same semantic token system.
+- **Mobile:** dense workspace controls collapse into single-column, touch-friendly layouts.
+
+## Local development
+
+### Requirements
 
 - Node.js 22+
-- pnpm
+- pnpm 11+
 - PostgreSQL
 
-The repository currently specifies:
-
-```json
-{
-  "engines": {
-    "node": ">=22.13.0"
-  }
-}
-```
-
----
-
-## Installation
-
-Clone the repository and install dependencies:
+### Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/mehmood14/job-scout-hub.git
 cd job-scout-hub
 pnpm install
 ```
 
----
-
-## Environment Variables
-
-Create the required environment files locally.
-
-Do not commit `.env` files.
-
-The repository should contain only example environment configuration such as:
-
-```text
-.env.example
-```
-
-For the API, configure the PostgreSQL connection:
+Create `apps/api/.env`:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
@@ -176,277 +98,47 @@ OWNER_PASSWORD="choose-a-long-unique-password"
 CLIENT_ORIGIN="http://localhost:5173"
 ```
 
-`OWNER_PASSWORD` unlocks the private owner workspace. Sessions use an HttpOnly
-cookie, expire after 168 hours by default, and use secure cookies in production.
-Visitors can use **Explore demo** to access isolated, read-only sample data.
-
-For the web application, configure the deployed/local API URL if your frontend uses an environment variable for it:
+Create `apps/web/.env` when the API does not run at the default local URL:
 
 ```env
 VITE_API_URL="http://localhost:3001"
 ```
 
----
-
-## Database Setup
-
-Generate the Prisma client:
+Generate Prisma client and apply migrations:
 
 ```bash
 pnpm --filter api exec prisma generate
-```
-
-Apply database migrations:
-
-```bash
 pnpm --filter api exec prisma migrate deploy
 ```
 
-For local development, when creating a new migration:
-
-```bash
-pnpm --filter api exec prisma migrate dev
-```
-
----
-
-## Development
-
-Run the API:
+Run the apps in separate terminals:
 
 ```bash
 pnpm dev:api
-```
-
-Run the frontend:
-
-```bash
 pnpm dev:web
 ```
 
-Run the MCP service:
-
-```bash
-pnpm dev:mcp
-```
-
-The services can then be developed independently while sharing packages through the pnpm workspace.
-
----
-
-## Type Checking
-
-Run type checking across the monorepo:
+## Quality checks
 
 ```bash
 pnpm typecheck
-```
-
-This executes the `typecheck` script for workspace packages.
-
----
-
-## Production Build
-
-Build the frontend:
-
-```bash
-pnpm --filter web build
-```
-
-Build the API:
-
-```bash
-pnpm --filter api build
-```
-
-Start the compiled API:
-
-```bash
-pnpm --filter api start
-```
-
----
-
-## API Deployment
-
-The API requires the Prisma client to be generated before the TypeScript build.
-
-A typical production build command is:
-
-```bash
-pnpm install && pnpm prisma generate && pnpm build
-```
-
-A typical production start command is:
-
-```bash
-pnpm prisma migrate deploy && pnpm start
-```
-
-If the deployment platform uses `apps/api` as its root directory, these commands run against the API package directly.
-
-The production environment must provide:
-
-```env
-DATABASE_URL=...
-```
-
----
-
-## Frontend Deployment
-
-The React application can be deployed to Vercel or another static frontend platform.
-
-Typical build command:
-
-```bash
-pnpm --filter web build
-```
-
-The frontend must point to the deployed API rather than:
-
-```text
-http://localhost:3001
-```
-
-For example:
-
-```env
-VITE_API_URL=https://your-api.example.com
-```
-
----
-
-## JSON Import
-
-Applications can be imported individually or in bulk.
-
-Example:
-
-```json
-[
-  {
-    "company": "Example Company",
-    "role": "Frontend Engineer",
-    "status": "Applied",
-    "salaryExpectation": "65 000 SEK/mo"
-  },
-  {
-    "company": "Another Company",
-    "role": "Senior Frontend Engineer",
-    "status": "Recruiter Contacted",
-    "salaryExpectation": null
-  }
-]
-```
-
-At minimum, each application must contain:
-
-```json
-{
-  "company": "Example Company",
-  "role": "Frontend Engineer"
-}
-```
-
-If no status is supplied during import, the application defaults to `Applied`.
-
----
-
-## Application Architecture
-
-The frontend uses TanStack Query as the server-state layer.
-
-Application data follows the general flow:
-
-```text
-React UI
-   ↓
-TanStack Query
-   ↓
-API client
-   ↓
-Express API
-   ↓
-Prisma
-   ↓
-PostgreSQL
-```
-
-Mutations invalidate or optimistically update the applications query so the UI remains synchronized with the backend.
-
-Search, filtering, sorting, and pagination currently operate on the applications loaded by the frontend.
-
----
-
-## MCP
-
-The repository also contains an MCP service under:
-
-```text
-apps/mcp
-```
-
-This allows Job Scout functionality to be exposed through the Model Context Protocol while keeping the core application API separate from the MCP integration.
-
----
-
-## Git
-
-Before committing changes:
-
-```bash
-pnpm typecheck
+pnpm --filter web lint
+pnpm test
 pnpm --filter web build
 pnpm --filter api build
 ```
 
-Then:
+GitHub Actions runs typechecking, linting, Vitest business-logic tests, Prisma generation, and both production builds on every push and pull request.
 
-```bash
-git add .
-git commit -m "your commit message"
-git push
-```
+## Deployment
 
----
+- **Web:** deploy `apps/web` to Vercel with `VITE_API_URL` set to the Render API URL. The Vercel rewrite keeps `/case-study` directly shareable.
+- **API:** deploy `apps/api` to Render. Generate Prisma client during build and run `prisma migrate deploy` before starting the API.
+- **Database:** configure `DATABASE_URL` with the Neon connection string.
 
-## Git Ignore
+## Contact
 
-The repository should ignore generated files, dependencies, and secrets:
+I’m Mehmood Ul Haq, a Stockholm-based full-stack software engineer with 5+ years of experience. I enjoy frontend architecture, product-focused delivery, and turning complex work into a clear, friendly experience.
 
-```gitignore
-node_modules/
-.pnpm-store/
-
-dist/
-
-.env
-.env.*
-!.env.example
-
-.DS_Store
-```
-
----
-
-## Status
-
-Job Scout Hub currently supports the core application-tracking workflow:
-
-- Application CRUD
-- Bulk JSON import
-- Search
-- Status filtering
-- Status sorting
-- Pagination
-- Journey statistics
-- Salary expectations
-- Multiple UI themes
-- Responsive frontend
-- PostgreSQL persistence
-- Production deployment
-- MCP integration
-
-Further improvements can be added incrementally as the job-search workflow evolves.
+- [LinkedIn](https://www.linkedin.com/in/mehmood-ul-haq/)
+- [mehmoodulhaq14@gmail.com](mailto:mehmoodulhaq14@gmail.com)

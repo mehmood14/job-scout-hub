@@ -698,6 +698,7 @@
 .application-form-grid textarea,
 .application-json-form textarea {
   width: 100%;
+  box-sizing: border-box;
 
   border: 1px solid var(--color-border);
   border-radius: 9px;
@@ -805,6 +806,15 @@
   grid-column: 1 / -1;
 
   margin-top: 4px;
+}
+
+.application-create-actions {
+  justify-content: space-between;
+}
+
+.application-form-error {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .primary-button {
@@ -919,6 +929,17 @@
 }
 
 .application-modal {
+  width: min(100%, 720px);
+  max-height: min(760px, calc(100vh - 40px));
+  overflow: auto;
+  padding: 26px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 24px 64px rgb(15 23 42 / 25%);
+}
+
+.application-create-modal {
   width: min(100%, 720px);
   max-height: min(760px, calc(100vh - 40px));
   overflow: auto;
@@ -1475,6 +1496,10 @@
   }
 
   .application-modal {
+    padding: 20px;
+  }
+
+  .application-create-modal {
     padding: 20px;
   }
 

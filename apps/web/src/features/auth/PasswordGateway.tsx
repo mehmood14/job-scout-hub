@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { track } from "@vercel/analytics";
 
 type PasswordGatewayProps = {
   onLogin: (password: string) => Promise<void>;
@@ -33,6 +34,7 @@ export function PasswordGateway({ onLogin, onExploreDemo }: PasswordGatewayProps
 
     try {
       await onExploreDemo();
+      track("demo_started", { accessMode: "viewer" });
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Unable to start demo mode.");
     } finally {
@@ -114,6 +116,7 @@ export function PasswordGateway({ onLogin, onExploreDemo }: PasswordGatewayProps
           </p>
         )}
         <p className="gateway-note"><span aria-hidden="true">●</span> Demo mode is read-only. Private applications stay private.</p>
+        <a className="gateway-case-study-link" href="/case-study">Curious how it was built? Read the case study <span aria-hidden="true">→</span></a>
       </section>
     </main>
   );
