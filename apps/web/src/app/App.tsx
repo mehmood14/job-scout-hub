@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import mehmoodPortrait from "../assets/mehmood.jpeg";
@@ -15,12 +15,19 @@ import { enterDemo, getSession, login, logout, type Session } from "../features/
 
 function App() {
   const queryClient = useQueryClient();
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [session, setSession] = useState<Session | null>(null);
+  const sessionChangedDuringRestore = useRef(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    void getSession().then(setSession).catch(() => setSession(null));
+    void getSession()
+      .then((nextSession) => {
+        if (!sessionChangedDuringRestore.current) setSession(nextSession);
+      })
+      .catch(() => {
+        if (!sessionChangedDuringRestore.current) setSession(null);
+      });
   }, []);
 
   useEffect(() => {
@@ -31,12 +38,14 @@ function App() {
   }, [successMessage]);
 
   async function establishSession(action: () => Promise<Session>): Promise<void> {
+    sessionChangedDuringRestore.current = true;
     const nextSession = await action();
     await queryClient.removeQueries({ queryKey: ["applications"] });
     setSession(nextSession);
   }
 
   async function handleLogout(): Promise<void> {
+    sessionChangedDuringRestore.current = true;
     await logout();
     setIsFormOpen(false);
     queryClient.removeQueries({ queryKey: ["applications"] });
@@ -45,32 +54,6 @@ function App() {
 
   function handleApplicationCreated(message: string): void {
     setSuccessMessage(message);
-  }
-
-  if (session === undefined) {
-    return (
-      <main className="gateway-page gateway-page-loading">
-        <ThemeToggle variant="gateway" />
-        <div className="loading-float loading-float-one" aria-hidden="true">
-          <span>✨</span>
-          <small>Almost there</small>
-        </div>
-        <div className="loading-float loading-float-two" aria-hidden="true">
-          <span>☕</span>
-          <small>Fresh ideas brewing</small>
-        </div>
-        <div className="loading-float loading-float-three" aria-hidden="true">
-          <span>🙌</span>
-          <small>Good things loading</small>
-        </div>
-        <section className="loading-state" role="status" aria-live="polite" aria-label="Preparing Job Scout Hub">
-          <span className="loading-state-mark" aria-hidden="true">JS</span>
-          <span className="loading-state-spinner" aria-hidden="true" />
-          <h1>Waking up the demo crew…</h1>
-          <p>While they grab coffee, pick a theme from the Appearance panel.</p>
-        </section>
-      </main>
-    );
   }
 
   if (!session) {
