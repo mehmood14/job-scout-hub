@@ -1316,6 +1316,7 @@
 
 .modal-form label {
   display: grid;
+  min-width: 0;
   gap: 7px;
   color: var(--color-text);
   font-size: 13px;
@@ -1326,6 +1327,7 @@
 .modal-form select,
 .modal-form textarea {
   width: 100%;
+  box-sizing: border-box;
   min-height: 42px;
   border: 1px solid var(--color-border);
   border-radius: 9px;
