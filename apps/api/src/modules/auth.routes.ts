@@ -8,6 +8,7 @@ import {
   sessionMaxAgeMs,
   verifyOwnerPassword,
 } from "./auth.service.js";
+import { ensureDemoApplications } from "./demo.service.js";
 
 const loginSchema = z.object({ password: z.string().min(1) });
 
@@ -66,6 +67,7 @@ authRouter.post("/login", async (request, response) => {
 });
 
 authRouter.post("/demo", async (_request, response) => {
+  await ensureDemoApplications();
   const session = await createSession("viewer");
   setSessionCookie(response, session.id);
   return response.status(201).json({ authenticated: true, accessMode: "viewer" });
