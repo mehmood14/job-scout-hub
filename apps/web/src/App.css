@@ -873,6 +873,30 @@ textarea:focus-visible {
   line-height: 1.6;
 }
 
+.loading-state .loading-state-duration {
+  margin-top: 14px;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.loading-state-progress {
+  width: min(100%, 260px);
+  height: 7px;
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+}
+
+.loading-state-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+  transition: width 240ms ease;
+}
+
 .gateway-glow {
   position: absolute;
   z-index: -1;
